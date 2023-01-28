@@ -1,0 +1,51 @@
+Un contenedor cuando lo ejecutamos la mayoria de veces solo se ejecuta y con la misma se cierra
+entonces para poder evitar eso podemos hacer que el contenedor de Docker lo deje corriendo aun asi
+si no estamos dentro de el, vamos a realizar el ejemplo con un contenedor de Ubuntu:
+
+docker run --name <alias o nombre del contenedor> -d ubuntu <comando para correr>
+docker run --name miContenedor -d ubuntu tail -f /dev/null
+
+Podemos ejecutar:
+
+docker ps
+
+Y veremos que ahora el contenedor en la columna STATUS dice UP, eso quiere decir que esta corriendo nuestro contenedor
+sin estar dentro de el, pero que pasa si quiero trabajar dentro del contenedor?
+Podemos hacer uso del siguiente comando para entrar:
+
+docker exec -it <ID, nombre o alias del contenedor> <comando a ejecutar dentro del contenendor>
+docker exec -it miContenedor bash
+
+Y con eso estaremos de nuevo dentro de una terminal dentro de nuestro contenedor de Ubuntu de Docker.
+Y ahora ¿Como hacemos para que ese contenedor se cierre, que deje de ejecutarse?, lo podemos hacer de varias maneras
+dependiendo de el sistema operativo que estemos utilizando, pero primero debemos saber el ID del proceso que tiene
+nuestro contenedor, entonces usamos el siguiente comando:
+
+docker inspect --format '{{.State.Pid}}' <nombre o alias del contenedor>
+docker inspect --format '{{.State.Pid}}' miContenedor
+
+Ahora si podremos detener el contenedor:
+
+- Si estas en linux puedes usar alguno de estos:
+sudo kill <ID> (si no tienes permisos de administrador)
+sudo kill -9  <ID> (en caso no te deje el comando anterior)
+kill <ID> (si eres administrador)
+docker kill <ID>
+sudo kill -9 "$(sudo docker inspect --format '{{.State.Pid}}' alwaysup)"
+
+- Si estas en Windows:
+
+docker stop <nombre o alias del contenedor>
+
+-Si estas en MacOS:
+
+docker kill <ID, nombre o alias del contenedor>
+
+¿Que significa eso de -f /dev/null?
+/dev/null es conocido como un "agujero negro" es decir que ese archivo no tiene nada y no habra problemas
+para ejecutar algo.
+No solo existe ese, hay varios:
+
+/dev/full
+/dev/zero
+/dev/random

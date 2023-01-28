@@ -1,0 +1,29 @@
+Verificamos que este corriendo Docker:
+sudo service docker status
+
+En caso de que no, lo iniciamos:
+sudo service docker start
+
+Corremor un contenedor de ubuntu dentro de Docker:
+docker run ubuntu
+
+Si colocamos:
+docker -it ubuntu
+
+-i -> Es interactivo
+-t -> Es para abrir una terminal
+
+Podremos acceder a un modo interactivo, estaremos dentro de ubuntu dentro de una maquina virtual, para verificar eso
+colocamos:
+ls
+y nos daremos cuenta que son las carpetas de ubuntu
+Para ver que enserio estamos dentro de ese contenedor de Ubuntu en caso no creas puedes ver la version de Ubuntu que
+se instalo en el contenedor de Docker:
+cat /etc/lsb-release
+
+Ese comando nos dara una descripcion de que estamos trabajando con el contenedor de Docker y la informacion de Ubuntu.
+
+Para ver que ese contenedor esta corriendo en tiempo real, podemos abrir otra terminal y colocar lo que haciamos antes:
+docker ps
+
+Entonces tendremos la informacion de que el contenedor de Ubuntu esta corriendo desde un cierto tiempo.

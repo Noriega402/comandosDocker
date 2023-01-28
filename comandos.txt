@@ -1,0 +1,11 @@
+- Para listar los contenedores que estan corriendo al instante: docker ps
+- Para listar todos los contenedores que estan o corrieron alguna vez: docker ps -a
+- Para ver toda la descripcion de contenedor especifico: docker inspect <CONTAINER-ID>
+- Para ver descripcion de contenedor especifico por medio de alias: docker inspect <NAMES>
+ejemplo: docker inspect hello-world
+- Para crear un contenedor con un nombre (alias): docker run --name test hello-world
+- Para renombrar el un contenedor: docker rename <old-name> <new-name>
+Ejemplo: docker rename test daniel
+- Para eliminar contenedores por ID o NAME: docker rm <ID o NAME>
+- Para eliminar todos los contenedores que estan inactivos: docker container prune
+

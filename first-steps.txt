@@ -1,0 +1,33 @@
+- Para poder ver el estado de docker en nuestra maquina:
+sudo systemctl status docker
+o tambien:
+sudo service docker status
+
+- Para poder iniciar docker si es que esta de forma manual:
+sudo systemctl start docker
+o tambien:
+sudo service start docker
+
+- En caso de reiniciarlo o que algoeste mal:
+sudo systemctl restart docker
+o tambien:
+sudo service docker restart
+
+- Para alias:
+alias docker="sudo docker"
+
+- Para ver los contenedores que estan corriendo:
+docker ps
+
+NOTA: En caso de un permiso denegado y un mensaje como este:
+
+
+Entonces vemos el video para poder resolver este problema:
+https://www.digitalocean.com/community/questions/how-to-fix-docker-got-permission-denied-while-trying-to-connect-to-the-docker-daemon-socket
+
+O podemos seguir estos pasos:
+- vamos a la terminal y escribimos: sudo usermod -aG docker ${USER}
+- luego escribimos su - ${USER} y nos dara un espacio para escribir la contraseña del usuario.
+- por ultimo revisamo si ya nos deja docker: docker ps
+Y listo
+HAPPY HACKING!!!

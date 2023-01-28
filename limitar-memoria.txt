@@ -1,0 +1,7 @@
+- Para poder limitar la memoria de Docker lo podemos hacer desde su creacion
+(cuando corremos el comando "docker run") usando flags de: Runtime constraints on resource
+y se veria algo asi:
+docker run --memory="100m" --cpus=0.5 <image>
+
+Podemos ver mas de esto en la documentacion oficial:
+https://docs.docker.com/engine/reference/run/#runtime-constraints-on-resources
