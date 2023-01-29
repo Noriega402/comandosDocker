@@ -1,0 +1,44 @@
+docker run -d --name db mongo
+docker ps -a
+Ejecutamos mongo:
+docker exec -it db bash
+NOTA: a partir de la version 6.0 para ejecutar el bin en mongo
+se se utiliza la palabra: "mongosh"
+
+COMANDOS PARA MONGO
+show dbs (ver las bases de datos creadas)
+use <name> (crear una nueva base de datos)
+db.user.insert({"campo":"nombre"}) (para insertar un registro)
+NOTA: puede que lance un mensaje de advertencia de utilizar
+alguno de estos comandos: "insertOne", "insertMany", "bulkWrite"
+db.user.find() (para ver los registros guardados)
+
+BORRAR UN CONTENEDOR A FUERZA:
+si queremos eliminar un contenedor pero esta activo lo podemos hacer de la siguiente manera:
+docker rm -f <nombreContenedor>
+docker rm -f db
+
+Lo malo de borrar el contenedor de mongo es que los datos que
+guardamos en la base de datos ya no estaran, podemos repetir los
+pasos par instalar de nuevo el contenedor de mongo:
+
+docker run -d --name db mongo
+
+Luego los mismos pasos para ingresar a mongo:
+
+docker exec -it db bash
+
+¿COMO HACEMOS PARA QUE LOS REGISTROS NO SE BORREN?
+hay una manera para hacer que los datos persistan:
+
+creamos una carpetaa nueva:
+
+mkdir mongodata
+
+obtenemos la ruta absoluta de la carpeta en donde estamos:
+
+pwd
+
+La copiamos y hacemos lo siguiente:
+
+docker run -d --name db -v <ruta del pwd>/mongodata:/data/db mongo
