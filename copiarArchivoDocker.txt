@@ -1,0 +1,46 @@
+Para poder copiar un archivo de mi maquina virtual al contenedor
+de docker lo que se hace es lo siguiente: (se usara un contenedor de ubuntu)
+
+1. Vamos a correr el comando:
+docker run -d --name copytest ubuntu -f /dev/null
+
+2. Vamos a verificar que el contenedor este corriendo:
+docker ps
+
+3. Ingresamos al contenedor de Ubuntu:
+docker exec -it copytest bash
+
+4. Una vex dentro creamos una carpeta en donde vamos a guardar nuestro archivo:
+mkdir pruebas
+
+5. Salimos del contenedor de Ubuntu:
+exit
+
+6. Nos dirigimos a la carpeta donde esta el archivo que queremos copiar, en mi caso es asi:
+cd Documents/practicasDocker
+
+7. Corremos el siguiente comando para indicar que queremos copiar el archivo al contendor de docker:
+docker cp saludar.txt copytest:/pruebas/copia.txt
+docker cp <archivoParaCopiar> <nombreContenedor>:/<rutaDestinoCopia>
+
+8. Para verificar que el archivo de copia.txt fue agregado exitosamente al contenedor podemos hacerlo de la siguiente manera:
+docker exec -it copytest bash
+cd pruebas
+ls
+
+De esta manera veremos que si se ha copiado el archivo 
+
+## Copiar directorios
+Se realiza de la misma forma en que se copia un solo archivo:
+**NOTA:** Para poder copiar una carpeta nos ubicamos un nivel inferior de ella, por ejemplo:
+
+> Tengo una carpeta de "Mis Documentos" llamada examenes, entonce para poder copiarla solo tengo que ubicarme de esta manera:
+cd Documents
+
+- Luego de eso procedo a copiar la carpeta:
+docker cp examenes copytest:/
+
+Y listo, pero en caso querramos copiar esa carpeta en otra carpeta dentro del contenedor se puede hacer de esta manera:
+docker cp examenes copytest:/pruebas/examenesCopias
+
+**NOTA:** Se le cambio de nombre a la carpeta a la hora de copiarlo dentro del contenedor.
