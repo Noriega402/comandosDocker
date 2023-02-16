@@ -424,7 +424,7 @@ user pruebas
 db.users.find()
 ```
 
-Y podremo ver en la terminal que la informacion se guardo dentro del volumen
+Y podremos ver en la terminal que la informacion se guardo dentro del volumen
 
 ### Pasos para crear volumenes
 
@@ -503,6 +503,8 @@ Luego los mismos pasos para ingresar a mongo:
 ```bash
 docker exec -it db bash
 ```
+
+[Aprende más sobre como borrar volumnes, contenedores e images en Docker](https://www.digitalocean.com/community/tutorials/how-to-remove-docker-images-containers-and-volumes-es)
 
 ## ¿Como hacemos para que los datos persistan en el contenedor de mongoDB?
 
