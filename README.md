@@ -718,3 +718,119 @@ docker push <nombreUsuario>/ubunt:test
 ```
 
 Y listo tendremos nuestra primera imagen en Docker Hub
+
+## El sistema de capas
+
+Las imágenes son un conjunto de capas, y a partir del Dockerfile se puede saber como está construido una imagen. Existen distintas maneras de ver las capas que conforman una imagen:
+
+1. Si la imagen es pública se puede visitar Dockerhub y buscar una imagen para ver su Dockerfile. Una vez encontrar la imagen buscamos en los tag y haciendo clic en los tag se mostrará el docker file para construir dicha imagen.
+
+2. Se puede hacer a través de la línea, esta opción no es muy cómoda. Es importante destaca que los cambios se presenta por filas y las filas más inferiores son los cambios más viejos y las que están más arriba son los cambios más recientes. el comando es
+```bash
+docker history <nombreImagen:tag>
+```
+- Ejemplo 
+    <pre>docker history dnoriega20/ubuntu:test></pre>
+
+Otra forma de poder ver ese historial es con una herramienta externa llamada **dive** te dejo la [documentación](https://github.com/wagoodman/dive) para poder instalarlo y varios atajos de teclado en esta herramienta.
+
+### Usando dive
+
+Ver el historial de una imagen
+```bash
+dive ubuntu:test
+```
+ Para navegar dentro de esta herramienta es por medio de las flechas y la tecla Tab.
+
+ ## Utilizando la cache en Docker
+ Para aprvechar al 100% Docker podemos hacer uso del cache que se ejecuta siempre al realizar cambios dentro del codigo, por ejemplo para evitar estar haciendo el _docker build -t miapp_ solo por cambiar una linea de codigo y esperar a que se empaquete todo en el contenedor de nuevo podemos hacer el alchivo _Dockerfile_ de la siguiente manera:
+ ```bash
+FROM node:14
+
+COPY ["package.json", "package-lock.json", "/usr/src/"]
+
+WORKDIR /usr/src
+
+RUN npm install
+
+COPY [".", "/usr/src"]
+
+EXPOSE 8080
+
+CMD ["npx", "nodemon", "index.js"]
+
+ ```
+
+ __NOTA:__ Una mejor explicacion es que al hacer la copia solo de los _package_ es para evitar que al realizar el build con docker tengamos que estar en una espera mayor ya que al hacer esto estamos diciendole que copie las dependencias primero, para despues hacer la instalacion de las mismas con Node, luego de eso, podemos copiar todos los archivos que se modificaron, mientras que le damos la orden de que se ejecute mediante nodemon para que se actualice de manera automatica sin necesidad de estar deteniendo el contenedor y volver a iniciarlo desde 0.
+
+ ## Docker Networking
+
+Bueno, un resumen de que el el network en Docker, practicamente es crear un localhodt vitrual y conectar ahi todas las apps o máquinas que quieras, es como si la red fuese un router virtual y cada app puede acceder puede acceder a ese router (red).
+
+Tambien conocidas como redes virtuales (redes de docker)
+```bash
+docker network
+```
+
+Para listar las redes que tenemos en Docker usamos el siguiente comando
+```bash
+docker network ls
+```
+
+__NOTA:__ habran algunas redes ya que son por defecto
+
+Para crear nuestra propia red
+```bash
+docker network create --attachable mired
+```
+
+__NOTA:__ _--attachable_ permite que otros contenedores se puedan conectar a la red nueva que estoy creando
+
+Para inspeccionar las redes
+```bash
+docker network inspect <nombreDeRed>
+```
+
+Para este ejemplo utilizaremos una basede datos de MongoDB, entonces creamos el contenedor para esa base de datos.
+```bash
+docker run -d --name monguito mongo
+```
+
+Conectar un contenedor a una red
+```bash
+docker network connect <nombreDeRed> <nombreContenedorParaConectar>
+```
+
+__NOTA:__ el codigo anterior quiere decir: quiero que en esta red, conectes este contenedor.
+
+Ahora lo unico que hace falta hacer es correr la aplicacion conectada a esa red
+
+```bash
+docker run -d --name app -p 8080:8080 --env MONGO_URL=mongodb://monguito:27017/test miapp
+```
+
+__NOTA:__ --env es para agregar una variable de entorno porque el archivo _index.js_ contiene esa variable de entorno _MONGO_URL=mongodb://_ espara especificar la ruta del contenedor, en este caso el nombre del contenedor de la base de datos es _monguito_ con el puerto _27017_ y _miapp_ es para decirle a que imagen quiero que se conecte
+
+Por ultimo para ver si el contenedor esta corriendo nos dirigimos al navegador de tu preferencia, en mi caso sera Chrome y en la barra de direcciones colocamos 
+```bash
+localhost:8080
+```
+
+¿Te funciono? Por supuesto que no!!!
+Aun nos falto un paso muy importante y es agregar ese contenedor que agregamos en el codigo anterior, entonces basta con hacer lo que ya aprendimos para agregar contenedores a una red, en este caso lo agregaremos a la red llamada _mired_:
+
+```bash
+docker network connect mired app
+```
+
+Inspeccionamos la red
+```bash
+docker network inspect
+```
+
+Y podremos ver que ya esta agregado, volvemos al navegador y colocamos lo de siempre:
+```bash
+localhost:8080
+```
+
+Listo, esta vez si funciona!
