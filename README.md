@@ -834,3 +834,313 @@ localhost:8080
 ```
 
 Listo, esta vez si funciona!
+
+## Docker Compose: la herramienta todo en uno
+
+Es una herramienta que permite simplificar el uso de Docker. A partir de archivos YAML es mas sencillo crear contendores, conectarlos, habilitar puertos, volumenes, etc.
+
+Con Compose puedes crear diferentes contenedores y al mismo tiempo, en cada contenedor, diferentes servicios, unirlos a un volúmen común, iniciarlos y apagarlos, etc. Es un componente fundamental para poder construir aplicaciones y microservicios.
+
+Docker Compose te permite mediante archivos YAML, poder instruir al Docker Engine a realizar tareas, programáticamente. Y esta es la clave, la facilidad para dar una serie de instrucciones, y luego repetirlas en diferentes ambientes.
+
+__NOTA:__ Si estas utilizando Docker en Windows o Mac, no tendras problemas al utilizar Docker Compose, pero si estas utilizando en alguna distribucion de Linux, es probable que tenga que instalarlo de forma manual, pero para verificar que tengas Docker Compose utilizaremos el siguinte comando
+```bash
+docker compose version
+```
+
+Te tendria que aparecer una version, en caso de no ser asi, te dejo la [documetaciòn](https://docs.docker.com/compose/install/) oficial de Docker para poder instalarlo en caso tengas problemas con ello.
+
+Ahora nos dirigimos al proyecto que tenemos con Docker y en el archivo de _index.js_ recordemos que tenemos la conexion al puerto 8080, entonces tendremos que modificar algunas cosas en el proyecto, en este caso vamos a editar el archivo _docker-compose.yml_ de la siguiente manera
+```bash
+vim docker-compose.yml
+```
+
+Luego de esto nos el archivo esta compuesto de algo como esto:
+```bash
+version: "3.8"
+
+services:
+  app:
+    image: platziapp
+    environment:
+      MONGO_URL: "mongodb://db:27017/test"
+    depends_on:
+      - db
+    ports:
+      - "3000:3000"
+
+  db:
+    image: mongo
+```
+
+Vamos a analizar que significan cada una de esta lineas:
+
+| Linea  | Uso |
+|  :---:  |  :----:  |
+| version: "3.8"  |  Indica la version que se esta utilizando de docker compose  |
+| services:  | Son los servicios o contenedores que utilizara Docker para correr los contenedores en este caso son la app y la bd |
+| app: | nombre del servicio que utilizara |
+| image: | la imagen que se utilizara en la app |
+| enviroment:  | Declaraciòn de variables de entorno para la app |
+| depends_on:  | Indica que este servicio depende de otro, en este caso app depende de db |
+| ports: | el puerto que utilizara el contenedor para exponer el contenedor |
+| db:  | indica la base de datos que se usara |
+| image:  | Indica la imagen que utilizara la base de datos |
+
+Ahora bien ya explicado lo anterior, vamos a cambiar algunas lineas de codigo:
+- Cambiaremos la linea del servicio de _app_ porque la imagen de platziapp probablemente no este disponible, en este caso hay dos opciones posibles, podemos hacer el cambio de la imagen o podemos hacer un build en lugar de la imagen.
+	- Para cambiar la imagen podemos solo hacer uso de la imagen de una app que tengamos, en este caso creamos una llamada _miap_ y modificamos la linea:
+	```bash
+	vim docker-compose.yml
+	```
+
+	```bash
+	image: miapp
+	```
+	- La otra opcion es usar _build_ eliminamos _image:_ platziapp y agregamos _build:_ ./
+	```bash
+	build: ./
+	```
+
+Ahora bien, por el momento solo cambiamos una linea de codigo, veamos que pasa si ejecutamos con docker compose
+```bash
+docker compose up
+```
+
+¿Te funciono?
+Posiblemente si, o posiblemente no, en mi caso si funciono, pero que pasa si intento acceder al navegador, veamos:
+```bash
+localhost:8080
+```
+
+Nos da un error verdad.
+El error tiene que ver con el puerto que estamos accediendo, porque en nuestro archivo de _index.js_ estamos diciendo que sea en el puerto 8080, pero en docker estamos diciendo que sea en el puerto 3000, entonces manos a la obra
+	- Para solucionar esto, modificaremos la linea de _ports:_
+	```bash
+	ports: "8080:8080"
+	```
+
+Entonces para parar el contenedor solo hacemos el uso de Ctrl + C, luego volvemos a ejecutar el siguiente comando:
+```bash
+docker compose up
+```
+
+Vemos que esta vez si se puede acceder desde el navegador en el puerto 8080
+Pero tambien es algo molesto ver todos los logs en la terminal cuando corremos el comando de docker compose, para evitar ver todos los logs podemos hacer uso de una bandera que vimos con anterioridad:
+```bash
+docker compose up -d
+```
+
+El comando anterior hace que corra el contenedor sin ver los logs
+
+__NOTA:__ Lo bueno de ver los logs es que podemos ver si falla algo al ejecutar el contenedor, en caso de no necesitarlos solo agregamos la bandera _-d_ y listo el contenedor correra sin mostrar nada.
+
+## Subcomando de Docker Compose
+
+__NOTA:__ Para estar utilizando los comandos de Docker Compose solo se pueden utilizar dentro de la carpeta o proyecto que contiene el archivo _docker-compose.yml_, de lo contrario si tratas de ejecutarlo en otra carpeta y no cuenta con un archivo de docker, no lo reconocera.
+
+Vamos a ver algo interesante, sabemos que ya iniciamos el contenedor con Docker Compose, pero lo que hace Docker Compose es levantar un servio de red -> (network) lo podemos ver con comandos que ya practicamos con anterioridad:
+```bash
+docker network ls
+```
+
+Vemos que aparece sigue la red llamada _mired_ que nosotros creamos, pero hay algo nuevo, otra red llamada __docker_default__ esta red es la que se creo al utilizar Docker Compose, veamos que tiene esta red por dentro:
+```bash
+docker network inspect docker_default
+```
+
+Podemos ver que en la clave de _containers:_ hay 2  contenedores, uno es de la app y el otro de la db de mongo.
+
+Ver los logs de los servicios
+
+- Para ver todos los logs
+```bash
+docker compose logs
+```
+
+- Para ver los logs de un solo contenedor
+```bash
+docker compose logs <nombreServicio>
+```
+
+Ejemplo:
+
+<pre>docker compose logs app</pre>
+
+Te preguntaras, __¿Como saber el nombre del servicio?__, sencillo lo hacemos viendo los procesos que estan corriendo en docker
+```bash
+docker ps
+```
+
+Luego no fijamos en la columna de _NAMES_ (los nombres del contenedor) en mi caso aparecen como: _docker-app-1_ y _docker-db-1_ esos son los nombre de los servicios, pero para poder verlos solo agregamos la palabra que este en medio, en otras palabras, ignoramos la palabra _docker_ y el _numero_
+Intentalo con el servicio de la dase de datos, te reto a ver los logs de la db
+
+Tambien podemos hacer un _follow_ de los logs de los servicios
+```bash
+docker compose logs -f app
+```
+
+__NOTA:__ para salir de los logs presiona Ctrl + C
+
+Tambien puede hacer el seguimiento de logs de varios servicios
+```bash
+docker compose logs app db
+```
+
+Se puede hacer con N cantidad de servicios.
+
+Para correr un comando en un contenedor lo hacemos de la siguiente manera
+```bash
+docker compose exec <nombreServicio> <comandoParaEjecutar>
+```
+
+Ejemplo
+<pre>docker compose exec app bash</pre>
+
+Ahora bien, podemos listat los procesos que tiene el Docker Compose y tambien ver cuales estan corriendo
+
+- Para listar los servicios de Docker Compose
+```bash
+docker compose ls
+```
+
+- Para ver los procesos activos de Docker Compose
+```bash
+docker compose ps
+```
+
+Ahora para poder "destruir" o parar los servicios de Docker Compose podemos hacer uso del siguiente comando:
+```bash
+docker compose down
+```
+
+Y mostrar los contenedores que esta destruyendo
+Si nos damos cuenta y hacemos un _docker ps_ los contenedores ya no estan corriendo, lo que hizo el comando anterior es que detiene y elimina los contenedores y a su vez destruye la red donde estaban alojados _(docker_default)_ para comprobarlo verifica si la red aun esta.
+
+## Docker Compose como herramienta de desarrollo
+
+_docker-compose_ nació como un proyecto open source que se llamaba fig y luego docker lo compró y lo renombró como docker-compose.
+
+Haremos algunos cambios al archivo de _docker-compose.yml_ en donde dice __image: miapp__ la modificaremos para que sea asi:
+```bash
+build: .
+```
+
+Luego de eso hacemos uso del siguiente comando
+```bash
+docker compose build
+```
+
+El cual hace referencia para que cree una imagen (hacer un build) con esa carpeta, pero ahora viene otro problema, que pasa si intento cambiar algo del codigo y quiero que se refresque de manera automatica, tocaria hacer el mismo proceso de detener el docker compose, luego iniciarlo, despues levantarlo y estar asi a cada rato, no es algo bueno, quita tiempo, entonce lo que podemos hacer es uso de los __bind mounts__ que ya vimos en capitulos anteriores.
+
+Tendremos que agregar volumenes a _docker-compose.yml_ y el archivo queda de la siguiente manera:
+```bash
+version: "3.8"
+
+services:
+  app:
+    build: .
+    environment:
+      MONGO_URL: "mongodb://db:27017/test"
+    depends_on:
+      - db
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/usr/src
+      - /usr/src/node_modules
+  db:
+    image: mongo
+
+```
+
+¿Notas la diferencia? agregamos al servicio de _app_ volumenes para hacer que se recargue de forma automatica los cambios que hagamos en nuestra aplicacion sin necesidad de estar destruyendo y creando de nuevo el contenedor.
+
+Ahora hacemos uso del siguiente comando para que se guarden los cambios
+```bash
+docker compose up -d
+```
+
+Y listo, cada cambio realizado se refrescara de manera automatica en el navegador.
+Ahora en caso no te funcione hay otra solucion:
+- Vamosa nuestro archivo _docker-compose.yml_ y agregamos un comando para que se ejecute en este caso es el siguiente
+```bash
+version: "3.8"
+
+services:
+  app:
+    build: .
+    environment:
+      MONGO_URL: "mongodb://db:27017/test"
+    depends_on:
+      - db
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/usr/src
+      - /usr/src/node_modules
+    command: npx nodemon index.js
+  db:
+    image: mongo
+```
+
+Ahora para guardar los cambios lo mismo
+```bash
+docker compose up -d
+```
+
+Y listo ya tendria que estar todo en orden...
+
+## Colaboracion en equipo: Override
+
+docker-compose.override.yml es un archivo que se encarga de sobreescribir tu configuración de docker-compose.yml , se puede usar para tener segura tu configuración y para no guardar los cambios en el repositorio de git.
+Un equivalente podría ser los archivos de declaración de variables de entorno, donde hay un archivo .env declarando su nombre y valor, y hay una copia .env.example con solo las variables sin valor. En .gitignore se declara que los cambios en .env no serán guardados, pero mandamos el archivo de ejemplo al repositorio.
+
+- Crearemos un nuevo archivo en nuestra carpeta y le pondremos como nombre _docker-compse.override.yml_ este sera para agregar otras funcionalidades adicionales que querramos a nuestro proyecto
+```bash
+
+touch docker-compose.override.yml
+```bash
+Agregamos estas lineas de codigo
+version: "3.8"
+
+services:
+  app:
+    build: .
+    environment:
+      MY_NAME: "Daniel Noriega"
+```
+
+- Hacemos los siguiente pasos
+```bash
+docker compose build
+```
+
+```bash
+docker compose up -d
+```
+
+```bash
+docker compose exec app bash
+```
+
+El comando anterior es para algo interesante, si lo hacemos nos mandara al contenedor de Docker usando la terminal colocamos:
+```bash
+env
+```
+
+Y podremos ver que nos da informacion de las variables de entorno, entre ellas esta la de la base de datos y __MY_NAME__ quiere decir que ambos archivos se fusionan y toman los cambios para realizar dentro del contenedor
+
+### Escalar contenedores en puertos en serie
+Para lograr esto solo dispondremos del archivo _docker-compose.yml_ y modificaremos los puertos de esta manera:
+```bash
+ports:
+  - "8080-8081:8080"
+```
+
+Luego hacemos uso del siguiente comando:
+```bash
+docker compose up -d --scale app=2
+```
+
+__NOTA:__ --scale es para que sea "escalable" entre los puertos, en caso de querer màs puertos, simplemente aumentamos el numero, ahora _app=2_ quiere decir que levantara 2 aplicaciones en los puertos que tenemos para el uso de ellos
