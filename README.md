@@ -1144,3 +1144,161 @@ docker compose up -d --scale app=2
 ```
 
 __NOTA:__ --scale es para que sea "escalable" entre los puertos, en caso de querer màs puertos, simplemente aumentamos el numero, ahora _app=2_ quiere decir que levantara 2 aplicaciones en los puertos que tenemos para el uso de ellos
+
+
+## Administrando ambiente de Docker
+
+Comandos para liberar espacio:
+- Eliminando contenedores inactivos
+```bash
+docker container prune
+```
+
+- Eliminando contenedores activos e inactivos
+```bash
+docker rm -f $(docker ps -aq)
+```
+
+- Borrar todo lo que no estes usando (contenedores, networks, imagenes, volumenes)
+```bash
+docker system prune
+```
+Comandos para limitar memoria en un contenedor:
+```bash
+docker run -d --name <containerName> --memory <cantidad> <nombreImagen>
+```
+Por ejemplos:
+<pre>docker run -d --name app --memory 1g miapp</pre>
+<pre>docker run -d --name app --memory 35m miapp</pre>
+
+__NOTA:__ El primer ejemplo uso un limite de memoria de 1 GYGA, mienras que el segundo tiene un limite de 35 Megas.
+
+Limitar la memoria de los contenedores es util cuando queremos que varios contenedores corran al mismo tiempo y no consuman mas de lo necesario, pero hay algunos problemas en caso le coloquemos un limite de memoria menor a lo que esta consumiendo, el contenedor no funcionara, porque esa memoria no es lo suficiente para que el contenedor pueda correr.
+
+Limitar la cantidad de CPUs en los contenedores:
+Por ejemplo.
+```bash
+docker run --cpus=2 nginx
+```
+
+Para ver cuantos recursos esta consumiendo Docker
+```bash
+docker stats
+```
+
+__NOTA:__ solo funcionara cuando uno o mas contenedores esten activos.
+
+## dockerignore
+
+Asi como tambien existe el archivo para que git ignore carpeta o archivos, Docker implenta esto para sus contenedores. Entonces para poder hacerlo, te situas dentro de tu carpeta de donde tienes Docker para poder crear la imagen de ella.
+
+´´´bash
+docker build -t prueba
+´´´
+
+Ahora bien, ¿en que caso podemos utilizar el _.dockerignore_?
+- Por ejemplo si estas haciendo una app y esta tiene dependencias instaladas de node, dentro de tu app tendras que hacer un _npm install_ y cuando realices un _docker build_ para crear la imagen, docker tambien copiara esa carpeta de _node_modules_ y sabemos que esa carpeta pesa demasiado, nunca dejaria de copiarla, entonces aca es un gran ejemplo de como podremos usar el _dockerignore_
+
+al inicio de tu proyecto puedes crear el archivo __.dockerignore__ o en caso ya lo tengas no hay necesidad de crearlo, y dentro de esta podemos agregar las carpetas que no queremos que Docker copie a la imagen:
+
+´´´bash
+*.log
+.dockerignore
+.git
+.gitignore
+build/*
+Dockerfile
+node_modules
+npm-debug.log*
+README.md
+´´´
+
+Algo como esto prodriamos colocar, que ignore los _logs_, archivos de _git_ lo mas importante para nosotros ahora la carpeta de _node_modules_ y entre otros que no queremos que se copien dentro de la imagen para Docker
+
+Luego de hacer esos cambios podemos crear nuestra imagen:
+´´´bash
+docker build -t ejemplo
+´´´
+
+Para saber si en realidad los archivos no se copiaron dentro del contenedor, accedemos a la imagen, tendremos que crear el contenedor para eso y ya sabemos como crear un contenedor y despues accedemos al contenedor:
+´´´bash
+docker run -d --rm --name micontenedor ejemplo .
+´´´
+
+´´´bash
+docker exec -it micontenedor bash
+´´´
+
+Hacemos un _ls -la_ para ver si esos archivos se copiaron.
+
+## Multi stage build
+
+El Dockerfile de producción contiene 2 __“fases de build”__ que se pueden pensar como hacer 2 build seguidos, en donde al final la imagen construida contendrá lo especificado en el ultimo de los build, veamos un ejemplo de ello:
+´´´bash
+# Define una "stage" o fase llamada builder accesible para la siguiente fase
+FROM node:12 as builder
+# copiamos solo los archivos necesarios
+COPY ["package.json", "package-lock.json", "/usr/src/"]
+
+WORKDIR /usr/src
+# Instalamos solo las dependencias para Pro definidas en package.json
+RUN npm install --only=production
+
+COPY [".", "/usr/src/"]
+# instalamos dependencias de desarrollo
+RUN npm install --only=development
+
+# Pasamos los tests
+RUN npm run test
+## Esta imagen esta creada solo para pasar los tests.
+
+# Productive image
+FROM node:12
+
+COPY ["package.json", "package-lock.json", "/usr/src/"]
+
+WORKDIR /usr/src
+# instar las dependencias de PRO
+RUN npm install --only=production
+
+# Copiar  el fichero de la imagen anterior.
+# De cada stage se reutilizan las capas que son iguales.
+COPY --from=builder ["/usr/src/index.js", "/usr/src/"]
+# Pone accesible el puerto
+EXPOSE 3000
+
+CMD ["node", "index.js"]
+### En tiempo de build en caso de que algún paso falle, el build se detendrá por completo.
+´´´
+
+- El primer build corre 1 test que verifica que todo funcione bien
+- El segundo build construye la imagen final aprovechando el caché de las capas del primer build.
+
+Al final el 2do build es solo una extracción de lo que nos interza del primer build.
+
+Lo importante en este caso especifico es que si el _test_ falla, entonces el build 2 no se corre, lo que significa que la imagen no se construye.
+
+Ahora, lo siguiente que haremos es contruir la imagen con los archivos de producction.Dockerfile
+´´´bash
+docker build -t <nombreImagen> <rutaApp> -f <rutaDockerfile>
+´´´
+
+Ejemplo
+<pre>docker build -t produccion . -f build/productio.Dockerfile</pre>
+
+Luego de esto procederemos a crear el contenedor para que se pueda ejecutar
+´´´bash
+docker run -d --name prod produccion
+´´´
+
+Podemos ver que nuestro contenedor esta corriendo y si nos metemos dentro del contenedor
+´´´bash
+docker exec -it prod bash
+´´´
+
+Y ejecutamos
+´´´bash
+ls -lac
+´´´
+
+Veremos que todo corrio a la perfeccion, solo se copiaron los archivos que colocamos en el archivo de _production.Dockerfile_
