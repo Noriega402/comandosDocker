@@ -890,6 +890,7 @@ Vamos a analizar que significan cada una de esta lineas:
 Ahora bien ya explicado lo anterior, vamos a cambiar algunas lineas de codigo:
 - Cambiaremos la linea del servicio de _app_ porque la imagen de platziapp probablemente no este disponible, en este caso hay dos opciones posibles, podemos hacer el cambio de la imagen o podemos hacer un build en lugar de la imagen.
 	- Para cambiar la imagen podemos solo hacer uso de la imagen de una app que tengamos, en este caso creamos una llamada _miap_ y modificamos la linea:
+	
 	```bash
 	vim docker-compose.yml
 	```
@@ -898,6 +899,7 @@ Ahora bien ya explicado lo anterior, vamos a cambiar algunas lineas de codigo:
 	image: miapp
 	```
 	- La otra opcion es usar _build_ eliminamos _image:_ platziapp y agregamos _build:_ ./
+	
 	```bash
 	build: ./
 	```
@@ -1192,16 +1194,16 @@ __NOTA:__ solo funcionara cuando uno o mas contenedores esten activos.
 
 Asi como tambien existe el archivo para que git ignore carpeta o archivos, Docker implenta esto para sus contenedores. Entonces para poder hacerlo, te situas dentro de tu carpeta de donde tienes Docker para poder crear la imagen de ella.
 
-´´´bash
+```bash
 docker build -t prueba
-´´´
+```
 
 Ahora bien, ¿en que caso podemos utilizar el _.dockerignore_?
 - Por ejemplo si estas haciendo una app y esta tiene dependencias instaladas de node, dentro de tu app tendras que hacer un _npm install_ y cuando realices un _docker build_ para crear la imagen, docker tambien copiara esa carpeta de _node_modules_ y sabemos que esa carpeta pesa demasiado, nunca dejaria de copiarla, entonces aca es un gran ejemplo de como podremos usar el _dockerignore_
 
 al inicio de tu proyecto puedes crear el archivo __.dockerignore__ o en caso ya lo tengas no hay necesidad de crearlo, y dentro de esta podemos agregar las carpetas que no queremos que Docker copie a la imagen:
 
-´´´bash
+```bash
 *.log
 .dockerignore
 .git
@@ -1211,30 +1213,33 @@ Dockerfile
 node_modules
 npm-debug.log*
 README.md
-´´´
+```
 
 Algo como esto prodriamos colocar, que ignore los _logs_, archivos de _git_ lo mas importante para nosotros ahora la carpeta de _node_modules_ y entre otros que no queremos que se copien dentro de la imagen para Docker
 
 Luego de hacer esos cambios podemos crear nuestra imagen:
-´´´bash
+
+```bash
 docker build -t ejemplo
-´´´
+```
 
 Para saber si en realidad los archivos no se copiaron dentro del contenedor, accedemos a la imagen, tendremos que crear el contenedor para eso y ya sabemos como crear un contenedor y despues accedemos al contenedor:
-´´´bash
-docker run -d --rm --name micontenedor ejemplo .
-´´´
 
-´´´bash
+```bash
+docker run -d --rm --name micontenedor ejemplo .
+```
+
+```bash
 docker exec -it micontenedor bash
-´´´
+```
 
 Hacemos un _ls -la_ para ver si esos archivos se copiaron.
 
 ## Multi stage build
 
 El Dockerfile de producción contiene 2 __“fases de build”__ que se pueden pensar como hacer 2 build seguidos, en donde al final la imagen construida contendrá lo especificado en el ultimo de los build, veamos un ejemplo de ello:
-´´´bash
+
+```bash
 # Define una "stage" o fase llamada builder accesible para la siguiente fase
 FROM node:12 as builder
 # copiamos solo los archivos necesarios
@@ -1269,7 +1274,7 @@ EXPOSE 3000
 
 CMD ["node", "index.js"]
 ### En tiempo de build en caso de que algún paso falle, el build se detendrá por completo.
-´´´
+```
 
 - El primer build corre 1 test que verifica que todo funcione bien
 - El segundo build construye la imagen final aprovechando el caché de las capas del primer build.
@@ -1279,26 +1284,26 @@ Al final el 2do build es solo una extracción de lo que nos interza del primer b
 Lo importante en este caso especifico es que si el _test_ falla, entonces el build 2 no se corre, lo que significa que la imagen no se construye.
 
 Ahora, lo siguiente que haremos es contruir la imagen con los archivos de producction.Dockerfile
-´´´bash
+```bash
 docker build -t <nombreImagen> <rutaApp> -f <rutaDockerfile>
-´´´
+```
 
 Ejemplo
 <pre>docker build -t produccion . -f build/productio.Dockerfile</pre>
 
 Luego de esto procederemos a crear el contenedor para que se pueda ejecutar
-´´´bash
+```bash
 docker run -d --name prod produccion
-´´´
+```
 
 Podemos ver que nuestro contenedor esta corriendo y si nos metemos dentro del contenedor
-´´´bash
+```bash
 docker exec -it prod bash
-´´´
+```
 
 Y ejecutamos
-´´´bash
+```bash
 ls -lac
-´´´
+```
 
 Veremos que todo corrio a la perfeccion, solo se copiaron los archivos que colocamos en el archivo de _production.Dockerfile_
